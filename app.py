@@ -1,8 +1,6 @@
-from flask import Flask, request, jsonify
 import os
 import math
-
-app = Flask(__name__)
+import sys
 
 def is_prime(n):
     """Check if a number is prime"""
@@ -27,52 +25,107 @@ def generate_primes(limit):
             primes.append(num)
     return primes
 
-@app.route('/')
-def hello():
-    return """
-    <html>
-        <head>
-            <title>Docker Test App - Prime Calculator</title>
-        </head>
-        <body>
-            <h1>Bienvenido a la aplicación de cálculo de números primos</h1>
-            <p>Usa los siguientes endpoints:</p>
-            <ul>
-                <li><a href="/prime/check/&lt;number&gt;">/prime/check/&lt;number&gt;</a> - Verifica si un número es primo</li>
-                <li><a href="/prime/generate/&lt;limit&gt;">/prime/generate/&lt;limit&gt;</a> - Genera números primos hasta un límite</li>
-            </ul>
-        </body>
-    </html>
-    """
+def print_welcome():
+    """Print welcome message and instructions"""
+    print("===== CALCULADORA DE NUMEROS PRIMOS =====")
+    print("Ejecutandose en Docker")
+    print(f"Hostname: {os.getenv('HOSTNAME', 'unknown')}")
+    print("=" * 45)
+    print()
 
-@app.route('/prime/check/<int:number>')
-def check_prime_api(number):
-    """API endpoint to check if a number is prime"""
-    result = is_prime(number)
-    return jsonify({
-        'number': number,
-        'is_prime': result,
-        'message': f'{number} {"es" if result else "no es"} un número primo'
-    })
+def print_menu():
+    """Print the main menu options"""
+    print("MENU PRINCIPAL:")
+    print("1. Verificar si un numero es primo")
+    print("2. Generar numeros primos hasta un limite")
+    print("3. Salir")
+    print("-" * 30)
 
-@app.route('/prime/generate/<int:limit>')
-def generate_primes_api(limit):
-    """API endpoint to generate prime numbers up to a limit"""
-    if limit > 10000:
-        return jsonify({
-            'error': 'El límite no puede ser mayor a 10,000 para evitar sobrecarga del servidor'
-        }), 400
+def get_user_input(prompt, input_type=int, min_value=None, max_value=None):
+    """Get and validate user input"""
+    while True:
+        try:
+            value = input_type(input(prompt))
+            if min_value is not None and value < min_value:
+                print(f"Error: El valor debe ser mayor o igual a {min_value}")
+                continue
+            if max_value is not None and value > max_value:
+                print(f"Error: El valor debe ser menor o igual a {max_value}")
+                continue
+            return value
+        except ValueError:
+            print(f"Error: Por favor ingresa un valor valido ({input_type.__name__})")
+        except KeyboardInterrupt:
+            print("\nSaliendo...")
+            sys.exit(0)
+
+def check_single_prime():
+    """Check if a single number is prime"""
+    print("\nVERIFICAR NUMERO PRIMO")
+    print("-" * 25)
     
-    primes = generate_primes(limit)
-    return jsonify({
-        'limit': limit,
-        'count': len(primes),
-        'primes': primes
-    })
+    number = get_user_input("Ingresa un numero entero positivo: ", int, 1)
+    
+    result = is_prime(number)
+    
+    print(f"\nRESULTADO:")
+    print(f"Numero: {number}")
+    if result:
+        print(f"Estado: ES PRIMO")
+    else:
+        print(f"Estado: NO ES PRIMO")
+    print()
 
-@app.route('/health')
-def health():
-    return {'status': 'healthy'}, 200
+def generate_primes_menu():
+    """Generate prime numbers up to a limit"""
+    print("\nGENERAR NUMEROS PRIMOS")
+    print("-" * 26)
+    
+    limit = get_user_input("Ingresa el limite maximo (2-10000): ", int, 2, 10000)
+    
+    print(f"\nGenerando numeros primos hasta {limit}...")
+    primes = generate_primes(limit)
+    
+    print(f"\nRESULTADOS:")
+    print(f"Limite: {limit}")
+    print(f"Cantidad de primos: {len(primes)}")
+    
+    if len(primes) <= 50:
+        print(f"Numeros primos: {', '.join(map(str, primes))}")
+    else:
+        print(f"Primeros 10: {', '.join(map(str, primes[:10]))}")
+        print(f"Ultimos 10: {', '.join(map(str, primes[-10:]))}")
+        print(f"(Se omitieron {len(primes)-20} numeros)")
+    
+    print()
+
+def main():
+    """Main function - console application entry point"""
+    print_welcome()
+    
+    while True:
+        try:
+            print_menu()
+            choice = get_user_input("Selecciona una opcion (1-3): ", int, 1, 3)
+            
+            if choice == 1:
+                check_single_prime()
+            elif choice == 2:
+                generate_primes_menu()
+            elif choice == 3:
+                print("\nGracias por usar la Calculadora de Numeros Primos!")
+                print("Saliendo...")
+                break
+                
+            input("Presiona Enter para continuar...")
+            print("\n" + "="*45 + "\n")
+            
+        except KeyboardInterrupt:
+            print("\n\nSaliendo...")
+            break
+        except Exception as e:
+            print(f"\nError: {e}")
+            input("Presiona Enter para continuar...")
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=4000, debug=False)
+    main()

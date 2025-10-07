@@ -1,2 +1,5 @@
-Flask==3.0.0
-Werkzeug==3.0.1
+# No external dependencies required
+# This console application only uses Python standard library modules:
+# - os (for environment variables)
+# - math (for mathematical operations)
+# - sys (for system operations)
